@@ -190,11 +190,10 @@ Traders Orderbook::AddOrder(OrderPointer order)
 
     orders_.insert({ order->GetOrderId(), { order, it } });
 
-    // Run matching while still holding the lock (safe)
+    
     return MatchOrdersUnlocked();
 }
 
-// ---------------- Cancel Order (public) ----------------
 
 void Orderbook::CancelOrder(OrderId id)
 {
@@ -206,11 +205,11 @@ void Orderbook::CancelOrder(OrderId id)
     CancelOrderInternal(id);
 }
 
-// ---------------- Cancel helpers (internal) ----------------
+
 
 void Orderbook::CancelOrderInternal(OrderId orderId)
 {
-    // assumes caller holds bookMutex_
+    
     if (!orders_.contains(orderId))
         return;
 
@@ -251,7 +250,7 @@ void Orderbook::CancelOrders(const OrderIds& orderIds)
         CancelOrderInternal(id);
 }
 
-// ---------------- Modify (match) Order ----------------
+
 
 Traders Orderbook::MatchOrder(const OrderModify& req)
 {
@@ -281,7 +280,7 @@ Traders Orderbook::MatchOrder(const OrderModify& req)
         orders_.erase(req.GetOrderId());
     }
 
-    // Create updated order and insert
+    
     OrderPointer updated = std::make_shared<Order>(
         oldOrder->GetOrderType(),
         req.GetOrderId(),
@@ -307,7 +306,6 @@ Traders Orderbook::MatchOrder(const OrderModify& req)
     return MatchOrdersUnlocked();
 }
 
-// ---------------- Orderbook Level Infos ----------------
 
 OrderbookLevelInfos Orderbook::GetOrderInfos() const
 {
@@ -340,12 +338,12 @@ OrderbookLevelInfos Orderbook::GetOrderInfos() const
     return OrderbookLevelInfos(bidInfos, askInfos);
 }
 
-// ---------------- Background pruning thread ----------------
+
 void Orderbook::PruneGoodForDayOrders()
 {
     using namespace std::chrono;
 
-    const auto marketClose = hours(16);  // 4:00 PM local time
+    const auto marketClose = hours(16);  
 
     while (true)
     {
@@ -358,26 +356,26 @@ void Orderbook::PruneGoodForDayOrders()
         localtime_r(&now_c, &now_parts);
 #endif
 
-        // If current time is past 16:00, schedule for next day
+        
         if (now_parts.tm_hour >= marketClose.count())
             now_parts.tm_mday += 1;
 
-        // Set target time = today/tomorrow at 16:00:00
+        
         now_parts.tm_hour = marketClose.count();
         now_parts.tm_min = 0;
         now_parts.tm_sec = 0;
 
-        // Convert back to time_point
+        
         auto nextPruneTime = system_clock::from_time_t(std::mktime(&now_parts));
 
-        // Add slight buffer for scheduler slippage
+        
         auto waitDuration = nextPruneTime - now + milliseconds(100);
 
         {
             // Use shutdown mutex for condition_variable waiting
             std::unique_lock<std::mutex> waitLock(shutdownMutex_);
 
-            // Wait until shutdown signal OR until scheduled time
+            
             if (shutdown_.load(std::memory_order_acquire) ||
                 shutdownConditionVariable_.wait_for(waitLock, waitDuration) == std::cv_status::no_timeout)
             {
@@ -385,7 +383,7 @@ void Orderbook::PruneGoodForDayOrders()
             }
         }
 
-        // Collect GFD orders and cancel them outside the wait lock
+    
         OrderIds toCancel;
         {
             std::scoped_lock bookLock(bookMutex_);
