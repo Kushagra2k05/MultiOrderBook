@@ -1,5 +1,7 @@
 #ifndef TRADE_H
 #define TRADE_H
+#include <vector>
+
 
 #include "Types.h"
 
