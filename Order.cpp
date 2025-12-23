@@ -1,6 +1,6 @@
 #include "Order.h"
 
-// Constructor
+
 Order::Order(OrderType orderType, OrderId orderId, Side side, Price price, Quantity quantity)
     : orderType_(orderType),
       orderId_(orderId),
@@ -10,7 +10,7 @@ Order::Order(OrderType orderType, OrderId orderId, Side side, Price price, Quant
       remainingQuantity_(quantity)
 {}
 
-// Getters
+
 OrderId Order::GetOrderId() const { return orderId_; }
 Side    Order::GetSide() const { return side_; }
 Price   Order::GetPrice() const { return price_; }
@@ -19,7 +19,7 @@ Quantity Order::GetRemainingQuantity() const { return remainingQuantity_; }
 Quantity Order::GetInitialQuantity() const { return initialQuantity_; }
 bool    Order::IsFilled() const { return remainingQuantity_ == 0; }
 
-// Fill
+
 void Order::Fill(Quantity qty)
 {
     if (qty > remainingQuantity_)
