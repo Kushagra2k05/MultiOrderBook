@@ -16,7 +16,6 @@ Orderbook::Orderbook()
 
 Orderbook::~Orderbook()
 {
-    // Signal shutdown and wake the pruning thread
     shutdown_.store(true, std::memory_order_release);
     shutdownConditionVariable_.notify_one();
 
@@ -66,7 +65,6 @@ bool Orderbook::CanFullyFill(Side side, Price price, Quantity quantity) const
 
 
     if (side == Side::Buy) {
-        // examine asks (ascending)
         for (const auto& [levelPrice, list] : asks_) {
             if (levelPrice > price) break;
 
@@ -78,7 +76,7 @@ bool Orderbook::CanFullyFill(Side side, Price price, Quantity quantity) const
             quantity -= levelQuantity;
         }
     } else {
-        // side == Sell: examine bids (descending)
+        
         for (const auto& [levelPrice, list] : bids_) {
             if (levelPrice < price) break;
 
@@ -142,7 +140,6 @@ Traders Orderbook::MatchOrdersUnlocked()
     return trades;
 }
 
-// Public wrapper for matching: acquires lock then calls unlocked helper
 Traders Orderbook::MatchOrders()
 {
     std::scoped_lock lock(bookMutex_);
@@ -153,7 +150,7 @@ Traders Orderbook::MatchOrders()
 
 Traders Orderbook::AddOrder(OrderPointer order)
 {
-    // Validate FOK (Fill-Or-Kill) before touching the book.
+    
     if (order->GetOrderType() == OrderType::FillOrKill)
     {
         if (!CanFullyFill(order->GetSide(), order->GetPrice(), order->GetInitialQuantity()))
@@ -165,7 +162,7 @@ Traders Orderbook::AddOrder(OrderPointer order)
     if (orders_.count(order->GetOrderId()))
         return {};
 
-    // Fill-and-kill must be immediately matchable (example semantics)
+    
     if (order->GetOrderType() == OrderType::FillAndKill &&
         ! ( (order->GetSide() == Side::Buy && !asks_.empty() && order->GetPrice() >= asks_.begin()->first)
          || (order->GetSide() == Side::Sell && !bids_.empty() && bids_.begin()->first >= order->GetPrice()) )
@@ -199,7 +196,7 @@ void Orderbook::CancelOrder(OrderId id)
 {
     std::scoped_lock lock(bookMutex_);
 
-    // If not present, noop
+    
     if (!orders_.contains(id)) return;
 
     CancelOrderInternal(id);
@@ -302,7 +299,7 @@ Traders Orderbook::MatchOrder(const OrderModify& req)
 
     orders_.insert({ updated->GetOrderId(), { updated, it } });
 
-    // Run matching
+    
     return MatchOrdersUnlocked();
 }
 
@@ -372,7 +369,7 @@ void Orderbook::PruneGoodForDayOrders()
         auto waitDuration = nextPruneTime - now + milliseconds(100);
 
         {
-            // Use shutdown mutex for condition_variable waiting
+            
             std::unique_lock<std::mutex> waitLock(shutdownMutex_);
 
             
