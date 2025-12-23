@@ -19,14 +19,14 @@ enum class Side { Buy, Sell };
 
 class Order {
 public:
-    // Full constructor
+    
     Order(OrderType orderType, OrderId orderId, Side side, Price price, Quantity quantity);
 
-    // Convenience constructor for market order (no price)
+    
     Order(OrderId orderId, Side side, Quantity quantity)
         : Order(OrderType::Market, orderId, side, Constants::InvalidPrice, quantity) {}
 
-    // Getters
+    
     OrderId GetOrderId() const;
     Side GetSide() const;
     Price GetPrice() const;
@@ -35,10 +35,10 @@ public:
     Quantity GetInitialQuantity() const;
     bool IsFilled() const;
 
-    // Mutators
+    
     void Fill(Quantity qty);
 
-    // Helpers
+    
     bool IsFillOrKill() const { return orderType_ == OrderType::FillOrKill; }
     bool IsGoodForDay() const { return orderType_ == OrderType::GoodForDay; }
 
